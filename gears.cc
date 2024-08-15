@@ -3,9 +3,12 @@
  * Homepage: <http://physino.xyz/gears>
  */
 #include <vector>
+#include <array>
 using namespace std;
+#include <G4AnalysisManager.hh>
 #include <G4SteppingVerbose.hh>
 #include <G4SteppingManager.hh>
+#include <G4UserSteppingAction.hh>
 /**
  * Output simulation results to screen or a file.
  */
@@ -15,14 +18,16 @@ class Output : public G4SteppingVerbose
     void Record(); ///< Record simulated data
   public:
     Output(); ///< use analysis manager to handle output
+    ~Output() { delete G4AnalysisManager::Instance(); }
     void TrackingStarted() { G4SteppingVerbose::TrackingStarted();
       Record(); } ///< Information of step 0 (initStep)
     void StepInfo() { G4SteppingVerbose::StepInfo();
-      Record(); } ///< Information of steps>0 
+      Record(); } ///< Information of steps>0
     void Reset() { trk.clear(); stp.clear(); vlm.clear(); pro.clear();
-      pdg.clear(); pid.clear(); xx.clear(); yy.clear(); zz.clear(); dt.clear();
-      de.clear(); dl.clear(); l.clear(); x.clear(); y.clear(); z.clear();
-      t.clear(); k.clear(); p.clear(); q.clear(); et.clear(); }
+        pdg.clear(); pid.clear(); xx.clear(); yy.clear(); zz.clear(); dt.clear();
+        de.clear(); dl.clear(); l.clear(); x.clear(); y.clear(); z.clear();
+        t.clear(); k.clear(); p.clear(); px.clear(); py.clear(); pz.clear(); q.clear(); et.clear();
+        nsec.clear();} //dmat.clear(); amat.clear(); zmat.clear();}
     void SetSteppingVerbose(int level) { fManager->SetVerboseLevel(level); }
     int GetSteppingVerbose() { return fManager->GetverboseLevel(); }
 
@@ -45,12 +50,25 @@ class Output : public G4SteppingVerbose
     vector<double> t;  ///< time elapsed from the beginning of an event [ns]
     vector<double> k;  ///< kinetic energy [keV]
     vector<double> p;  ///< momentum [keV]
+    vector<double> px;  ///< x momentum [keV]
+    vector<double> py;  ///< y momentum [keV]
+    vector<double> pz;  ///< z momentum [keV]
     vector<double> q;  ///< charge [elementary charge]
     vector<double> et; ///< Total energy deposited in a volume [keV]
+    vector<int> nsec;   ///< number of secondaries
+    //vector<double> dmat; ///< material density
+    //vector<double> amat; ///< material mass number
+    //vector<double> zmat; ///< material atomic number
+    //vector<double> bwgt; ///< bias weighting
+    //vector<double> efld; ///< e field (volume or world?)
+    //vector<double> bfld; ///< b field (volume or world?)
+
+    vector<double> nodes1D;
+    array<array<double,3>,4> nodes2D;
+
 };
 //______________________________________________________________________________
 //
-#include <G4AnalysisManager.hh>
 Output::Output(): G4SteppingVerbose()
 {
   auto manager = G4AnalysisManager::Instance();
@@ -76,8 +94,18 @@ Output::Output(): G4SteppingVerbose()
   manager->CreateNtupleDColumn("t", t);
   manager->CreateNtupleDColumn("k", k);
   manager->CreateNtupleDColumn("p", p);
+  manager->CreateNtupleDColumn("px", px);
+  manager->CreateNtupleDColumn("py", py);
+  manager->CreateNtupleDColumn("pz", pz);
   manager->CreateNtupleDColumn("q", q);
   manager->CreateNtupleDColumn("et", et);
+  manager->CreateNtupleIColumn("nsec",nsec);
+  //manager->CreateNtupleDColumn("dmat",dmat);
+  //manager->CreateNtupleDColumn("amat",amat);
+  // manager->CreateNtupleDColumn("zmat",zmat);
+
+    manager->CreateNtupleDColumn("nodes1D", nodes1D);
+
   manager->FinishNtuple();
 }
 //______________________________________________________________________________
@@ -90,7 +118,7 @@ void Output::Record()
 
   G4TouchableHandle handle = fStep->GetPreStepPoint()->GetTouchableHandle();
   int copyNo=handle->GetReplicaNumber();
-  if (copyNo<=0) return; //skip uninteresting volumes (copy No. of world == 0)
+  //if (copyNo<=0) return; //skip uninteresting volumes (copy No. of world == 0)
   if (trk.size()>=10000) {
     G4cout<<"GEARS: # of step points >=10000. Recording stopped."<<G4endl;
     fTrack->SetTrackStatus(fKillTrackAndSecondaries);
@@ -126,6 +154,10 @@ void Output::Record()
   y.push_back(fTrack->GetPosition().y()/CLHEP::mm);
   z.push_back(fTrack->GetPosition().z()/CLHEP::mm);
 
+  px.push_back(fTrack->GetMomentum().x() / CLHEP::keV);
+  py.push_back(fTrack->GetMomentum().y() / CLHEP::keV);
+  pz.push_back(fTrack->GetMomentum().z() / CLHEP::keV);
+
   G4ThreeVector pos = handle->GetHistory()->GetTopTransform()
     .TransformPoint(fStep->GetPostStepPoint()->GetPosition());
   xx.push_back(pos.x()/CLHEP::mm);
@@ -137,6 +169,51 @@ void Output::Record()
     if (et.size()<(unsigned int)copyNo+1) et.resize((unsigned int)copyNo+1);
     et[copyNo]+=de.back(); et[0]+=de.back();
   }
+
+    // ---secondaries---
+    nsec.push_back(fStep->GetNumberOfSecondariesInCurrentStep()); ///< number of secondaries
+    // ---material---
+    // recall G4TouchableHandle handle = fStep->GetPreStepPoint()->GetTouchableHandle();
+    //std::cout<<">>> Material: " << handle->GetVolume()->GetLogicalVolume()->GetMaterial()->GetName() << std::endl;
+    //dmat.push_back(handle->GetVolume()->GetLogicalVolume()->GetMaterial()->GetDensity()); ///< material density
+    //amat.push_back(handle->GetVolume()->GetLogicalVolume()->GetMaterial()->GetA()); ///< material mass number
+    //zmat.push_back(handle->GetVolume()->GetLogicalVolume()->GetMaterial()->GetZ()); ///< material atomic number
+    // ---weighting---
+    // handle->GetVolume()->GetLogicalVolume()->GetBiasWeight()
+    //bwgt.push_back(); ///< bias weighting
+    // ---fields---
+    //efld.push_back(); ///< e field (volume or world?)
+    //bfld.push_back(); ///< b field (volume or world?)
+
+
+/*       c=0    c=1    c=2
+ *  r=0  0      0      0
+ *  r=1  0      1      2
+ *  r=2  0      2      4
+ *  r=3  0      3      6
+*/
+
+    // fill the array with the product of it's indices
+    for (int r = 0; r < nodes2D.size(); ++r)
+    {
+        for (int c = 0; c < nodes2D[r].size(); ++c)
+        {
+            nodes2D[r][c] = r * c;
+        }
+    }
+
+    //print 2d array
+    std::cout << "step: " << stp.size() << std::endl;
+    for (int r = 0; r < nodes2D.size(); ++r)
+    {
+        for (int c = 0; c < nodes2D[r].size(); ++c)
+        {
+            std::cout << nodes2D[r][c] << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "--------------" << std::endl;
+
 }
 //______________________________________________________________________________
 //
@@ -153,7 +230,7 @@ struct BorderSurface
   G4String v2;   ///< name of volume 2
   G4OpticalSurface* optic; ///< point to G4OpticalSurface object
   BorderSurface* next; ///< link to next border surface
-}; 
+};
 //______________________________________________________________________________
 //
 #include <G4tgrLineProcessor.hh>
