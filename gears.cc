@@ -75,6 +75,8 @@ public:
   vector<double> pz; ///< z component of momentum direction
   vector<double> q;  ///< charge [elementary charge]
   vector<double> et; ///< Total energy deposited in a volume [keV]
+  // NEW CODE: Adding ScoreVDB to Output class
+  ScoreVDB vdb;
 };
 //______________________________________________________________________________
 //
@@ -114,6 +116,9 @@ Output::Output() : G4SteppingVerbose() {
 //
 #include <G4NavigationHistory.hh>
 void Output::Record() {
+  // NEW CODE: VDB Score
+  vdb.scoreAccumulatedEnergy(x.back(), y.back(), z.back(), de.back());
+
   if (GetSilent() == 1) // CopyState() won't be called in G4SteppingVerbose
     CopyState();        // point fTrack, fStep, etc. to right places
 
@@ -161,6 +166,10 @@ void Output::Record() {
   x.push_back(fTrack->GetPosition().x() / CLHEP::mm);
   y.push_back(fTrack->GetPosition().y() / CLHEP::mm);
   z.push_back(fTrack->GetPosition().z() / CLHEP::mm);
+
+  // NEW CODE: scoreVDB
+  // REMEMBER: de is keV so scoring energy per voxel in keV
+  gScoreVDB.scoreAccumulatedEnergy(x.back(), y.back(), z.back(), de.back()));
 
   G4ThreeVector pos = handle->GetHistory()->GetTopTransform().TransformPoint(
       fStep->GetPostStepPoint()->GetPosition());
@@ -666,6 +675,10 @@ public:
       a->Write();
       a->CloseFile();
     }
+    // NEW CODE: Outputting VDB files
+    Output* o = (Output*) G4VSteppingVerbose::GetInstance();
+    o->vdb.writeVDB("edep.vdb");
+    o->vdb.writeNanoVDB("edep.nvdb");
   } ///< Close output file
 };
 //______________________________________________________________________________
@@ -748,6 +761,66 @@ class Action : public G4VUserActionInitialization {
     SetUserAction(new StackingAction);
   }
 };
+//______________________________________________________________________________
+// NEW CLASS: ScoreVDB
+#include <openvdb/openvdb.h>
+#include <nanovdb/nanovdb.h>
+
+class ScoreVDB{
+    private:
+      // Get a floating-point grid
+      openvdb::FloatGrid::Ptr grid;
+      // Get an accessor for coordinate-based access to voxels
+      openvdb::FloatGrid::Accessor accessor;
+      // adjustable voxel size for grid
+      double voxelSize;
+
+    public:
+      scoreVDB() : voxelSize(1.0)  // 1 mm default voxel size
+      {
+        // initialize the OpenVDB library
+        openvdb::initialize();
+        // create an empty floating-point grid with background value 0
+        grid = openvdb::FloatGrid::create(0.0);
+        grid->setName("Edep");
+        grid->setTransform(openvdb::math::Transform::createLinearTransform(voxelSize));
+        accessor = grid->getAccessor();
+      }
+
+      void setVoxelSize(double size)
+      {
+        voxelSize = size;
+        grid->setTransform(openvdb::math::Transform::createLinearTransform(voxelSize));
+      }
+
+      void scoreAccumulatedEnergy(double x, double y, double z, double edep)
+      {
+        if (edep <= 0) return;
+
+        // define a coordinate
+        openvdb::Vec3d position(x, y, z);
+        openvdb::Coord coord = grid->worldToIndexCellCentered(position);
+
+        edep_current = accessor.getValue(xyz);  // current energy deposited in voxel of coordinates
+        edep_accumulated = edep_init + edep;  // accumulated energy deposited in voxel of coordinates
+        accessor.modifyValue(coord, edep_accumulated);  // set voxel value to accumulated energy deposited
+      }
+
+      void writeVDB(const std::string& filename = "edep.vdb")
+      {
+        // create a VDB file object and write out the grid.
+        openvdb::io::File(filename).write({grid});
+        G4cout << "VDB grid written to file: " << filename << G4endl;
+      }
+
+      void writeNanoVDB(const std::string& filename = "edep.nvdb")
+      {
+        auto nanoGrid = nanovdb::tools::openToNanoVDB(*grid);
+        nanovdb::io::writeGrid(filename, nanoGrid);
+        G4cout << "NanoVDB grid written to file: " << filename << G4endl;
+      }
+};
+
 //______________________________________________________________________________
 //
 #include <G4PhysListFactory.hh>
