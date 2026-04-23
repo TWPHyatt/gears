@@ -115,12 +115,10 @@ Output::Output() : G4SteppingVerbose() {
 //______________________________________________________________________________
 //
 #include <G4NavigationHistory.hh>
-void Output::Record() {
-  // NEW CODE: VDB Score
-  vdb.scoreAccumulatedEnergy(x.back(), y.back(), z.back(), de.back());
-
-  if (GetSilent() == 1) // CopyState() won't be called in G4SteppingVerbose
-    CopyState();        // point fTrack, fStep, etc. to right places
+void Output::Record()
+{
+  if (GetSilent()==1) // CopyState() won't be called in G4SteppingVerbose
+    CopyState(); // point fTrack, fStep, etc. to right places
 
   G4TouchableHandle handle = fStep->GetPreStepPoint()->GetTouchableHandle();
   int copyNo = handle->GetReplicaNumber();
@@ -169,7 +167,7 @@ void Output::Record() {
 
   // NEW CODE: scoreVDB
   // REMEMBER: de is keV so scoring energy per voxel in keV
-  gScoreVDB.scoreAccumulatedEnergy(x.back(), y.back(), z.back(), de.back()));
+  vdb.scoreAccumulatedEnergy(x.back(), y.back(), z.back(), de.back());
 
   G4ThreeVector pos = handle->GetHistory()->GetTopTransform().TransformPoint(
       fStep->GetPostStepPoint()->GetPosition());
@@ -658,6 +656,7 @@ public:
 class RunAction : public G4UserRunAction {
 public:
   void BeginOfRunAction(const G4Run *) {
+    G4cout << "[RUN] begin" << G4endl;
     auto a = G4AnalysisManager::Instance();
     if (a->GetFileName() == "")
       return;
@@ -670,6 +669,7 @@ public:
     }
   } ///< enable output if output file name is not empty
   void EndOfRunAction(const G4Run *) {
+    G4cout << "[RUN] end - writing to vdb?" << G4endl;
     auto a = G4AnalysisManager::Instance();
     if (a->GetFileName() != "") {
       a->Write();
@@ -701,7 +701,9 @@ void SaveAndResetEvent() {
  */
 class EventAction : public G4UserEventAction {
 public:
-  void EndOfEventAction(const G4Event *) { SaveAndResetEvent(); }
+  void EndOfEventAction(const G4Event *) {
+    G4cout << "[EVENT] End " << evt->GetEventID() << G4endl;
+    SaveAndResetEvent(); }
 };
 //______________________________________________________________________________
 //
@@ -762,7 +764,7 @@ class Action : public G4VUserActionInitialization {
   }
 };
 //______________________________________________________________________________
-// NEW CLASS: ScoreVDB
+// NEW CODE: New Class: ScoreVDB
 #include <openvdb/openvdb.h>
 #include <nanovdb/nanovdb.h>
 
@@ -776,8 +778,9 @@ class ScoreVDB{
       double voxelSize;
 
     public:
-      scoreVDB() : voxelSize(1.0)  // 1 mm default voxel size
+      ScoreVDB() : voxelSize(1.0)  // 1 mm default voxel size
       {
+        G4cout << "[VDB] Initialised" << G4endl;
         // initialize the OpenVDB library
         openvdb::initialize();
         // create an empty floating-point grid with background value 0
@@ -795,15 +798,15 @@ class ScoreVDB{
 
       void scoreAccumulatedEnergy(double x, double y, double z, double edep)
       {
-        if (edep <= 0) return;
+        G4cout << "[VDB] edep=" << edep << G4endl;
+        if (edep <= 0) {return;}
 
         // define a coordinate
         openvdb::Vec3d position(x, y, z);
         openvdb::Coord coord = grid->worldToIndexCellCentered(position);
 
-        edep_current = accessor.getValue(xyz);  // current energy deposited in voxel of coordinates
-        edep_accumulated = edep_init + edep;  // accumulated energy deposited in voxel of coordinates
-        accessor.modifyValue(coord, edep_accumulated);  // set voxel value to accumulated energy deposited
+        float edepCurrent = accessor.getValue(coord);  // current energy deposited in voxel of coordinates
+        accessor.setValue(coord, edepCurrent + edep);  // set voxel value to accumulated energy deposited
       }
 
       void writeVDB(const std::string& filename = "edep.vdb")
