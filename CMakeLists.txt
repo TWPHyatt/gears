@@ -27,6 +27,9 @@ if(APPLE) # https://gitlab.kitware.com/cmake/community/-/wikis/doc/cmake/RPATH-h
   set(CMAKE_INSTALL_RPATH "${Geant4_DIR}/../..")
 endif()  # set RPATH in executable on Mac (must be before add_executable(...))
 
+find_package(OpenVDB REQUIRED)
+
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cc)
 target_link_libraries(${PROJECT_NAME} ${Geant4_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} OpenVDB::openvdb)
 install(TARGETS ${PROJECT_NAME}) # enable cmake --install
