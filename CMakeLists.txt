@@ -29,7 +29,7 @@ endif()  # set RPATH in executable on Mac (must be before add_executable(...))
 
 find_package(OpenVDB REQUIRED)
 
-add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cc)
+add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cc VDBOutput.cc)
 target_link_libraries(${PROJECT_NAME} ${Geant4_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} OpenVDB::openvdb)
 install(TARGETS ${PROJECT_NAME}) # enable cmake --install
