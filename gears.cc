@@ -115,8 +115,8 @@ Output::Output() : G4SteppingVerbose() {
 #include <G4NavigationHistory.hh>
 void Output::Record()
 {
-  if (GetSilent()==1) // CopyState() won't be called in G4SteppingVerbose
-    CopyState(); // point fTrack, fStep, etc. to right places
+  if (GetSilent() == 1) // CopyState() won't be called in G4SteppingVerbose
+    CopyState();        // point fTrack, fStep, etc. to right places
 
   G4TouchableHandle handle = fStep->GetPreStepPoint()->GetTouchableHandle();
   int copyNo = handle->GetReplicaNumber();
@@ -650,7 +650,6 @@ public:
 class RunAction : public G4UserRunAction {
 public:
   void BeginOfRunAction(const G4Run *) {
-    G4cout << "[RUN] begin" << G4endl;
     auto a = G4AnalysisManager::Instance();
     if (a->GetFileName() == "")
       return;
@@ -663,7 +662,6 @@ public:
     }
   } ///< enable output if output file name is not empty
   void EndOfRunAction(const G4Run *) {
-    G4cout << "[RUN] end - writing to vdb?" << G4endl;
     auto a = G4AnalysisManager::Instance();
     if (a->GetFileName() != "") {
       a->Write();
@@ -691,9 +689,7 @@ void SaveAndResetEvent() {
  */
 class EventAction : public G4UserEventAction {
 public:
-  void EndOfEventAction(const G4Event *) {
-    G4cout << "[EVENT] End " << evt->GetEventID() << G4endl;
-    SaveAndResetEvent(); }
+    void EndOfEventAction(const G4Event *) { SaveAndResetEvent(); }
 };
 //______________________________________________________________________________
 //
