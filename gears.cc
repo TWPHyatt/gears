@@ -113,8 +113,7 @@ Output::Output() : G4SteppingVerbose() {
 //______________________________________________________________________________
 //
 #include <G4NavigationHistory.hh>
-void Output::Record()
-{
+void Output::Record() {
   if (GetSilent() == 1) // CopyState() won't be called in G4SteppingVerbose
     CopyState();        // point fTrack, fStep, etc. to right places
 
@@ -689,7 +688,7 @@ void SaveAndResetEvent() {
  */
 class EventAction : public G4UserEventAction {
 public:
-    void EndOfEventAction(const G4Event *) { SaveAndResetEvent(); }
+  void EndOfEventAction(const G4Event *) { SaveAndResetEvent(); }
 };
 //______________________________________________________________________________
 //
