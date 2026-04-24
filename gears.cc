@@ -6,6 +6,7 @@
 using namespace std;
 #include <G4SteppingManager.hh>
 #include <G4SteppingVerbose.hh>
+#include "VDBOutput.hh"
 /**
  * Dump simulation results to screen or a file.
  */
@@ -649,6 +650,7 @@ public:
 class RunAction : public G4UserRunAction {
 public:
   void BeginOfRunAction(const G4Run *) {
+    G4cout << "[RUN] begin" << G4endl;
     auto a = G4AnalysisManager::Instance();
     if (a->GetFileName() == "")
       return;
@@ -661,11 +663,14 @@ public:
     }
   } ///< enable output if output file name is not empty
   void EndOfRunAction(const G4Run *) {
+    G4cout << "[RUN] end" << G4endl;
     auto a = G4AnalysisManager::Instance();
     if (a->GetFileName() != "") {
       a->Write();
       a->CloseFile();
     }
+  // ToDo write to a vdb file
+    VDBOutput vdbTest; // test call
   } ///< Close output file
 };
 //______________________________________________________________________________
@@ -688,7 +693,10 @@ void SaveAndResetEvent() {
  */
 class EventAction : public G4UserEventAction {
 public:
-  void EndOfEventAction(const G4Event *) { SaveAndResetEvent(); }
+  void EndOfEventAction(const G4Event *) {
+    G4cout << "[EVENT]  " << G4endl;
+    SaveAndResetEvent();
+  }
 };
 //______________________________________________________________________________
 //
