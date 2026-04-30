@@ -115,6 +115,7 @@ Output::Output() : G4SteppingVerbose() {
 //
 #include <G4NavigationHistory.hh>
 void Output::Record() {
+
   if (GetSilent() == 1) // CopyState() won't be called in G4SteppingVerbose
     CopyState();        // point fTrack, fStep, etc. to right places
 
@@ -648,6 +649,8 @@ public:
  * Book keeping before and after a run.
  */
 class RunAction : public G4UserRunAction {
+private:
+    VDBOutput* vdbTest;  // Pointer to VDBOutput
 public:
   void BeginOfRunAction(const G4Run *) {
     G4cout << "[RUN] begin" << G4endl;
@@ -693,8 +696,10 @@ void SaveAndResetEvent() {
  */
 class EventAction : public G4UserEventAction {
 public:
+    int count = 0;
   void EndOfEventAction(const G4Event *) {
-    G4cout << "[EVENT]  " << G4endl;
+    count = count + 1;
+    G4cout << "[EVENT]  " << count << G4endl;
     SaveAndResetEvent();
   }
 };

@@ -13,13 +13,13 @@ public:
     VDBOutput(double voxelSize = 1.0); // default voxel size 1 mm
     ~VDBOutput() = default;
 
-    /// Accumulate energy deposition at world position (mm) into the grid
+    // Accumulate energy deposition at world position (mm) into the grid
     void Fill(double x, double y, double z, double de_keV);
 
-    /// Write the current grid to a .vdb file
+    // Write the grid to a .vdb file
     void Write(const std::string &filename);
 
-    /// Reset the grid (e.g. between runs)
+    // Reset the grid
     void Reset();
 
 private:
