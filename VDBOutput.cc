@@ -43,11 +43,12 @@ void VDBOutput::Fill(double x, double y, double z, double de_keV){
       static_cast<int>(std::floor(indexPos.z()))
   );
 
+  // set voxel value to accumulated energy (kev)
   fAccessor.setValue(xyz, fAccessor.getValue(xyz) + static_cast<float>(de_keV));
 }
 
 void VDBOutput::Write(const std::string &filename) {
-  ///  Write the grid to vdb file
+  ///  Write the grid to a vdb file
 
   G4cout << "[VDB] Write() called." << G4endl;
 
