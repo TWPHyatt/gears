@@ -698,12 +698,15 @@ void SaveAndResetEvent() {
  * Book keeping before and after an event.
  */
 class EventAction : public G4UserEventAction {
+private:
+    RunAction* fRun;
 public:
+    EventAction(RunAction* run) : fRun(run) {}
     int count = 0;
   void EndOfEventAction(const G4Event *) {
     count = count + 1;
     G4cout << "[EVENT]  " << count << G4endl;
-    //fVDB.Fill(1,2,3,4);
+    fRun->fVDB.Fill(1,2,3,4);
     SaveAndResetEvent();
   }
 };
@@ -759,9 +762,10 @@ public:
 #include <G4VUserActionInitialization.hh>
 class Action : public G4VUserActionInitialization {
   void Build() const {
-    SetUserAction(new RunAction);
+    auto runAction = new RunAction;
+    SetUserAction(runAction);
     SetUserAction(new Generator);
-    SetUserAction(new EventAction);
+    SetUserAction(new EventAction(runAction));  // pass  pointer
     SetUserAction(new StackingAction);
   }
 };
