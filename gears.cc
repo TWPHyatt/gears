@@ -649,10 +649,10 @@ public:
  * Book keeping before and after a run.
  */
 class RunAction : public G4UserRunAction {
-private:
-    VDBOutput fVDB;
 public:
+    VDBOutput fVDB;
     RunAction() : fVDB(1.0){}  // 1mm voxels
+
   void BeginOfRunAction(const G4Run *) {
     G4cout << "[RUN] begin" << G4endl;
     auto a = G4AnalysisManager::Instance();
@@ -673,13 +673,14 @@ public:
       a->Write();
       a->CloseFile();
     }
-  // ToDo write to a vdb file
     fVDB.Write("test-vdb-file");
     fVDB.Reset();
   } ///< Close output file
 };
 //______________________________________________________________________________
 //
+
+
 void SaveAndResetEvent() {
   auto a = G4AnalysisManager::Instance();
   Output *o = ((Output *)G4VSteppingVerbose::GetInstance());
@@ -702,6 +703,7 @@ public:
   void EndOfEventAction(const G4Event *) {
     count = count + 1;
     G4cout << "[EVENT]  " << count << G4endl;
+    //fVDB.Fill(1,2,3,4);
     SaveAndResetEvent();
   }
 };
