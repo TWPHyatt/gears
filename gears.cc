@@ -650,8 +650,9 @@ public:
  */
 class RunAction : public G4UserRunAction {
 private:
-    VDBOutput* vdbTest;  // Pointer to VDBOutput
+    VDBOutput fVDB;
 public:
+    RunAction() : fVDB(1.0){}  // 1mm voxels
   void BeginOfRunAction(const G4Run *) {
     G4cout << "[RUN] begin" << G4endl;
     auto a = G4AnalysisManager::Instance();
@@ -673,7 +674,8 @@ public:
       a->CloseFile();
     }
   // ToDo write to a vdb file
-    VDBOutput vdbTest; // test call
+    fVDB.Write("test-vdb-file");
+    fVDB.Reset();
   } ///< Close output file
 };
 //______________________________________________________________________________
