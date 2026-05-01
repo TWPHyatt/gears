@@ -29,7 +29,7 @@ void VDBOutput::Fill(double x, double y, double z, double de_keV){
   ///  Takes world-space position of that step and the energy deposited,converts to a voxel index
   ///  Then adds that energy to the voxel
 
-  G4cout << "[VDB] Fill() called." << G4endl;
+  G4cout << " > [VDB] Fill() called." << G4endl;
 
   if (de_keV <= 0.0) return;
 
