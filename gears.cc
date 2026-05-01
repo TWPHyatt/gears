@@ -676,6 +676,11 @@ public:
     fVDB.Write("test-vdb-file");
     fVDB.Reset();
   } ///< Close output file
+
+  void FillVDB(double x, double y, double z, double de) {
+      /// calls VDBOuput::Fill
+      fVDB.Fill(x, y, z, de);
+    }
 };
 //______________________________________________________________________________
 //
@@ -706,7 +711,7 @@ public:
   void EndOfEventAction(const G4Event *) {
     count = count + 1;
     G4cout << "[EVENT]  " << count << G4endl;
-    fRun->fVDB.Fill(1,2,3,4);
+    fRun->FillVDB(1,2,3,4);
     SaveAndResetEvent();
   }
 };
