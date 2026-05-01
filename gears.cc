@@ -679,6 +679,7 @@ public:
 
   void FillVDB(double x, double y, double z, double de) {
       /// calls VDBOuput::Fill
+      G4cout << " > RunAction Filling  " << G4endl;
       fVDB.Fill(x, y, z, de);
     }
 };
@@ -710,8 +711,19 @@ public:
     int count = 0;
   void EndOfEventAction(const G4Event *) {
     count = count + 1;
-    G4cout << "[EVENT]  " << count << G4endl;
-    fRun->FillVDB(1,2,3,4);
+
+    // loop to fill VDB voxels
+
+    auto o = (Output*) G4VSteppingVerbose::GetInstance();  // get the output instance created earlier (in main)
+    // ^^^ WRONG - do not want to reply on stepping verbos
+    // ^^ Data is collected if I use '/tracking/verbose 1', which I don't want to reply on
+    // ToDo create my own stepping action class that replocates the logic in Output::Record()
+
+    G4cout << "[EVENT] " << count << " | o->x.size() = " << o->x.size() << G4endl;
+    for (size_t i = 0; i < o->x.size(); ++i) {
+      fRun->FillVDB(o->x[i], o->y[i], o->z[i], o->de[i]);
+    }
+
     SaveAndResetEvent();
   }
 };
