@@ -3,6 +3,7 @@
  * Homepage: <https://github.com/jintonic/gears>
  */
 #include <vector>
+#include <string>
 using namespace std;
 #include <G4SteppingManager.hh>
 #include <G4SteppingVerbose.hh>
@@ -676,15 +677,19 @@ public:
       a->CloseFile();
       // set VDB filename the same as analysis filename
       // so will have two files, e.g. a ".root" and a ".vdb"
-      std::string vdbName = a->GetFileName() + ".vdb";
-      fVDB.Write(vdbName);
+      std::string fname = a->GetFileName();
+
+      // strip any file extension if present then append .vdb
+      size_t pos = fname.find_last_of(".");
+      if (pos != std::string::npos) {fname = fname.substr(0, pos);}
+
+      fVDB.Write(fname + ".vdb");
     }
     fVDB.Reset();
   } ///< Close output file
 
   void FillVDB(double x, double y, double z, double de) {
       /// calls VDBOuput::Fill
-      G4cout << " > RunAction Filling  " << G4endl;
       fVDB.Fill(x, y, z, de);
     }
 };
