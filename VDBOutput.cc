@@ -50,13 +50,29 @@ void VDBOutput::Fill(double x, double y, double z, double de_keV){
 void VDBOutput::Write(const std::string &filename) {
   ///  Write the grid to a vdb file
 
-  G4cout << "[VDB] Write() called." << G4endl;
+  G4cout << "[VDB] Write() called: " << filename << G4endl;
 
+  openvdb::GridPtrVec grids;
+  grids.push_back(fGrid);
 
+  openvdb::io::File file(filename);
+  file.write(grids);
+  file.close();
+
+  G4cout << "[VDB] Written " << fGrid->activeVoxelCount()
+         << " active voxels to " << filename << G4endl;
 }
 
 void VDBOutput::Reset() {
   ///  discard the current grid and make a new one
   ///  to be used at the end of each beamOn?
-  G4cout << "[VDB] Rest() called." << G4endl;
+  G4cout << "[VDB] Reset() called." << G4endl;
+
+  fGrid = openvdb::FloatGrid::create(0.0f);
+  fGrid->setName("energy_deposition");
+  fGrid->setTransform(
+      openvdb::math::Transform::createLinearTransform(fVoxelSize));
+  fGrid->insertMeta("units_keV", openvdb::StringMetadata("keV"));
+  fGrid->insertMeta("voxel_mm",  openvdb::FloatMetadata((float)fVoxelSize));
+  fAccessor = fGrid->getAccessor();
 }
