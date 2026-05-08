@@ -83,3 +83,6 @@ cmake_install.cmake
 
 #RStudio
 .R*
+
+cmake-build-debug
+.idea
