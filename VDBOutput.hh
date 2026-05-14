@@ -24,8 +24,15 @@ public:
 
 private:
     double fVoxelSize; // voxel size in mm
-    openvdb::FloatGrid::Ptr fGrid;
-    openvdb::FloatGrid::Accessor fAccessor;
+    openvdb::FloatGrid::Ptr fGridTotal;  // for accumulated energy over all events
+    openvdb::FloatGrid::Accessor fAccessorTotal;  // ^^^
+    openvdb::FloatGrid::Ptr fGridEvent;  // for accumulated energy over a single event (one per event)
+    openvdb::FloatGrid::Accessor fAccessorEvent;  // ^^^
+
+    std::vector<openvdb::FloatGrid::Ptr> fEventEnergyGrids;  // vector to store all fEventEnergyGrid
+
+    openvdb::FloatGrid::Ptr MakeGrid(const std::string &name);
+
 };
 
 #endif //GEARS_VDBOUTPUT_HH
