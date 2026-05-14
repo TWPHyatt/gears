@@ -7,6 +7,7 @@
 
 #include <openvdb/openvdb.h>
 #include <string>
+#include <vector>
 
 class VDBOutput {
 public:
@@ -16,6 +17,9 @@ public:
     // Accumulate energy deposition at world position (mm) into the grid
     void Fill(double x, double y, double z, double de_keV);
 
+    // Current event grid
+    void SaveEvent(int eventNumber);
+
     // Write the grid to a .vdb file
     void Write(const std::string &filename);
 
@@ -24,12 +28,12 @@ public:
 
 private:
     double fVoxelSize; // voxel size in mm
-    openvdb::FloatGrid::Ptr fGridTotal;  // for accumulated energy over all events
-    openvdb::FloatGrid::Accessor fAccessorTotal;  // ^^^
-    openvdb::FloatGrid::Ptr fGridEvent;  // for accumulated energy over a single event (one per event)
-    openvdb::FloatGrid::Accessor fAccessorEvent;  // ^^^
+    openvdb::FloatGrid::Ptr fTotalGrid;  // for accumulated energy over all events
+    openvdb::FloatGrid::Accessor fTotalAccessor;  // ^^^
+    openvdb::FloatGrid::Ptr fEventGrid;  // for accumulated energy over a single event (one per event)
+    openvdb::FloatGrid::Accessor fEventAccessor;  // ^^^
 
-    std::vector<openvdb::FloatGrid::Ptr> fEventEnergyGrids;  // vector to store all fEventEnergyGrid
+    std::vector<openvdb::FloatGrid::Ptr> fEventGrids;  // vector to store all fEventEnergyGrid
 
     openvdb::FloatGrid::Ptr MakeGrid(const std::string &name);
 

@@ -19,10 +19,10 @@ openvdb::FloatGrid::Ptr VDBOutput::MakeGrid(const std::string &name) {
 
 VDBOutput::VDBOutput(double voxelSize)
     : fVoxelSize(voxelSize),
-      fGridTotal(nullptr),
-      fAccessorTotal(openvdb::FloatGrid::create(0.0f)->getAccessor())
-      fGridEvent(nullptr),
-      fAccessorEvent(openvdb::FloatGrid::create(0.0f)->getAccessor())
+      fTotalGrid(nullptr),
+      fTotalAccessor(openvdb::FloatGrid::create(0.0f)->getAccessor())
+      fEventGrid(nullptr),
+      fEventAccessor(openvdb::FloatGrid::create(0.0f)->getAccessor())
 {
   G4cout << "[VDB] constructor called." << G4endl;
   openvdb::initialize();
@@ -30,7 +30,6 @@ VDBOutput::VDBOutput(double voxelSize)
   fGridEvent    = MakeGrid("event_0");  // name placeholder
   fAccessorTotal = fGridTotal->getAccessor();
   fAccessorEvent = fGridEvent->getAccessor();
-
 }
 
 void VDBOutput::Fill(double x, double y, double z, double de_keV){
@@ -54,8 +53,22 @@ void VDBOutput::Fill(double x, double y, double z, double de_keV){
 
   // set voxel value to accumulated energy (kev)
   float de = static_cast<float>(de_keV);
-  fAccessorTotal.setValue(xyz, fAccessorTotal.getValue(xyz) + de);
-  fAccessorEvent.setValue(xyz, fAccessorEvent.getValue(xyz) + de);
+  fTotalAccessor.setValue(xyz, fTotalAccessor.getValue(xyz) + de);
+  fEventAccessor.setValue(xyz, fEventAccessor.getValue(xyz) + de);
+}
+
+void VDBOutput::SaveEvent(int eventNumber){
+  /// Name the event grid, store it, then create a fresh one
+
+  G4cout << "[VDB] SaveEvent() called. #" << eventNumber << G4endl;
+
+  fEventGrid->setName("event_" + std::to_string(eventNumber));
+
+  fEventGrids.push_back(fEventGrid);
+
+  fEventGrid     = MakeGrid("event_current");
+  fEventAccessor = fEventGrid->getAccessor();
+
 }
 
 void VDBOutput::Write(const std::string &filename) {
@@ -64,26 +77,32 @@ void VDBOutput::Write(const std::string &filename) {
   G4cout << "[VDB] Write() called: " << filename << G4endl;
 
   openvdb::GridPtrVec grids;
-  grids.push_back(fGrid);
+
+  // Per-event grids
+  for (auto &g : fEventGrids)
+    grids.push_back(g);
+
+  // Total grid
+  grids.push_back(fTotalGrid);
 
   openvdb::io::File file(filename);
   file.write(grids);
   file.close();
 
-  G4cout << "[VDB] Written " << fGrid->activeVoxelCount()
-         << " active voxels to " << filename << G4endl;
+  G4cout << "[VDB] Written " << grids.size() << " grids (" << fEventGrids.size() << " events + 1 total) to "
+  << filename << G4endl;
 }
 
 void VDBOutput::Reset() {
   ///  discard the current grid and make a new one
   ///  to be used at the end of each beamOn?
+
   G4cout << "[VDB] Reset() called." << G4endl;
 
-  fGrid = openvdb::FloatGrid::create(0.0f);
-  fGrid->setName("energy_deposition");
-  fGrid->setTransform(
-      openvdb::math::Transform::createLinearTransform(fVoxelSize));
-  fGrid->insertMeta("units_keV", openvdb::StringMetadata("keV"));
-  fGrid->insertMeta("voxel_mm",  openvdb::FloatMetadata((float)fVoxelSize));
-  fAccessor = fGrid->getAccessor();
+  fEventGrids.clear();
+
+  fTotalGrid = MakeGrid("total_energy_deposition");
+  fTotalAccessor = fTotalGrid->getAccessor();
+  fEventGrid = MakeGrid("event_current");
+  fEventAccessor = fEventGrid->getAccessor();
 }
