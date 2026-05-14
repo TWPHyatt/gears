@@ -20,16 +20,16 @@ openvdb::FloatGrid::Ptr VDBOutput::MakeGrid(const std::string &name) {
 VDBOutput::VDBOutput(double voxelSize)
     : fVoxelSize(voxelSize),
       fTotalGrid(nullptr),
-      fTotalAccessor(openvdb::FloatGrid::create(0.0f)->getAccessor())
+      fTotalAccessor(openvdb::FloatGrid::create(0.0f)->getAccessor()),  // temp
       fEventGrid(nullptr),
-      fEventAccessor(openvdb::FloatGrid::create(0.0f)->getAccessor())
+      fEventAccessor(openvdb::FloatGrid::create(0.0f)->getAccessor()) // temp
 {
   G4cout << "[VDB] constructor called." << G4endl;
   openvdb::initialize();
-  fGridTotal    = MakeGrid("total_energy_deposition");
-  fGridEvent    = MakeGrid("event_0");  // name placeholder
-  fAccessorTotal = fGridTotal->getAccessor();
-  fAccessorEvent = fGridEvent->getAccessor();
+  fTotalGrid    = MakeGrid("total_energy_deposition");
+  fEventGrid    = MakeGrid("event_0");  // name placeholder
+  fTotalAccessor = fTotalGrid->getAccessor();
+  fEventAccessor = fEventGrid->getAccessor();
 }
 
 void VDBOutput::Fill(double x, double y, double z, double de_keV){
@@ -43,7 +43,7 @@ void VDBOutput::Fill(double x, double y, double z, double de_keV){
 
   // Convert world position (in mm) to voxel index
   openvdb::Vec3d worldPos(x, y, z);
-  openvdb::Vec3d indexPos = fGrid->worldToIndex(worldPos);
+  openvdb::Vec3d indexPos = fTotalGrid->worldToIndex(worldPos);
 
   openvdb::Coord xyz(
       static_cast<int>(std::floor(indexPos.x())),
