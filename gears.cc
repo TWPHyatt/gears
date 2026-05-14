@@ -719,8 +719,8 @@ private:
 public:
     EventAction(RunAction* run) : fRun(run) {}
     int count = 0;
-  void EndOfEventAction(const G4Event *) {
-    count = count + 1;
+  void EndOfEventAction(const G4Event *evt) {
+    count++;
 
     // loop to fill VDB voxels
     auto o = (Output*) G4VSteppingVerbose::GetInstance();  // get the output instance created earlier (in main)
@@ -729,6 +729,11 @@ public:
       fRun->FillVDB(o->x[i], o->y[i], o->z[i], o->de[i]);
     }
 
+    // save the event grid
+    auto eventName = evt->GetEventID();  // set event name as Geant4's event number (starts at 0)
+    fRun->fVDB.SaveEvent(eventName);
+
+    // reset the event vectors
     SaveAndResetEvent();
   }
 };
