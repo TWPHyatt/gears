@@ -8,20 +8,29 @@
 #include <G4SteppingManager.hh>
 #include <G4SteppingVerbose.hh>
 
+openvdb::FloatGrid::Ptr VDBOutput::MakeGrid(const std::string &name) {
+  auto grid = openvdb::FloatGrid::create(0.0f);
+  grid->setName(name);
+  grid->setTransform(openvdb::math::Transform::createLinearTransform(fVoxelSize));
+  grid->insertMeta("units_keV", openvdb::StringMetadata("keV"));  // energy units label
+  grid->insertMeta("voxel_mm",  openvdb::FloatMetadata((float)fVoxelSize));  // " voxel size label"
+  return grid;
+}
+
 VDBOutput::VDBOutput(double voxelSize)
     : fVoxelSize(voxelSize),
-      fGrid(openvdb::FloatGrid::create(0.0f)),
-      fAccessor(fGrid->getAccessor())
+      fGridTotal(nullptr),
+      fAccessorTotal(openvdb::FloatGrid::create(0.0f)->getAccessor())
+      fGridEvent(nullptr),
+      fAccessorEvent(openvdb::FloatGrid::create(0.0f)->getAccessor())
 {
   G4cout << "[VDB] constructor called." << G4endl;
-
   openvdb::initialize();
-  fGrid->setName("energy_deposition");
-  //fGrid->setGridClass(openvdb::GRID_FOG_VOLUME);
-  fGrid->setTransform(openvdb::math::Transform::createLinearTransform(fVoxelSize));
+  fGridTotal    = MakeGrid("total_energy_deposition");
+  fGridEvent    = MakeGrid("event_0");  // name placeholder
+  fAccessorTotal = fGridTotal->getAccessor();
+  fAccessorEvent = fGridEvent->getAccessor();
 
-  fGrid->insertMeta("units_keV",  openvdb::StringMetadata("keV"));   // energy units label
-  fGrid->insertMeta("voxel_mm",   openvdb::FloatMetadata((float)voxelSize)); // " voxel size label"
 }
 
 void VDBOutput::Fill(double x, double y, double z, double de_keV){
@@ -44,7 +53,9 @@ void VDBOutput::Fill(double x, double y, double z, double de_keV){
   );
 
   // set voxel value to accumulated energy (kev)
-  fAccessor.setValue(xyz, fAccessor.getValue(xyz) + static_cast<float>(de_keV));
+  float de = static_cast<float>(de_keV);
+  fAccessorTotal.setValue(xyz, fAccessorTotal.getValue(xyz) + de);
+  fAccessorEvent.setValue(xyz, fAccessorEvent.getValue(xyz) + de);
 }
 
 void VDBOutput::Write(const std::string &filename) {
