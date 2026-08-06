@@ -121,8 +121,11 @@ void Output::Record() {
     CopyState();        // point fTrack, fStep, etc. to right places
 
   G4TouchableHandle handle = fStep->GetPreStepPoint()->GetTouchableHandle();
+  int depth  = handle->GetHistoryDepth();
   int copyNo = handle->GetReplicaNumber();
-  if (copyNo <= 0)
+  G4String volName = handle->GetVolume()->GetName();
+  G4cout << "[RECORD] vol=" << volName<< " depth=" << depth<< " copyNo=" << copyNo << " de=" << fStep->GetTotalEnergyDeposit()/CLHEP::keV << " keV" << G4endl;
+  if (depth == 0)
     return; // skip uninteresting volumes (copy No. of world == 0)
   if (trk.size() >= 10000) {
     G4cout << "GEARS: # of step points >=10000. Recording stopped." << G4endl;
@@ -724,7 +727,7 @@ public:
 
     // loop to fill VDB voxels
     auto o = (Output*) G4VSteppingVerbose::GetInstance();  // get the output instance created earlier (in main)
-    G4cout << "[EVENT] " << count << " | o->x.size() = " << o->x.size() << G4endl;
+    G4cout << "[EVENT] " << count << " | o->x.size() = " << o->x.size() << " o->y.size() = " << o->y.size() << " o->z.size() = " << o->z.size() << G4endl;
     for (size_t i = 0; i < o->x.size(); ++i) {
       fRun->FillVDB(o->x[i], o->y[i], o->z[i], o->de[i]);
     }
