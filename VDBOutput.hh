@@ -6,6 +6,8 @@
 #define GEARS_VDBOUTPUT_HH
 
 #include <openvdb/openvdb.h>
+#include <nanovdb/tools/CreateNanoGrid.h>
+#include <nanovdb/io/IO.h>
 #include <string>
 #include <vector>
 
@@ -21,7 +23,10 @@ public:
     void SaveEvent(int eventNumber);
 
     // Write the grid to a .vdb file
-    void Write(const std::string &filename);
+    void WriteVDB(const std::string &filename);
+
+    // Write NanoVDB file
+    void WriteNVDB(const std::string &filename);
 
     // Reset the grid
     void Reset();
