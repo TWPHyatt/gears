@@ -71,10 +71,10 @@ void VDBOutput::SaveEvent(int eventNumber){
 
 }
 
-void VDBOutput::Write(const std::string &filename) {
+void VDBOutput::WriteVDB(const std::string &filename) {
   ///  Write the grid to a vdb file
 
-  G4cout << "[VDB] Write() called: " << filename << G4endl;
+  G4cout << "[VDB] WriteVDB() called: " << filename << G4endl;
 
   openvdb::GridPtrVec grids;
 
@@ -91,6 +91,23 @@ void VDBOutput::Write(const std::string &filename) {
 
   G4cout << "[VDB] Written " << grids.size() << " grids (" << fEventGrids.size() << " events + 1 total) to "
   << filename << G4endl;
+}
+
+void VDBOutput::WriteNVDB(const std::string &filename)
+{
+  G4cout << "[NanoVDB] WriteNVDB() called: " << filename << G4endl;
+
+  std::vector<nanovdb::GridHandle<nanovdb::HostBuffer>> nanoGrids;
+
+  // Per-event grids
+  for (const auto &grid : fEventGrids) {nanoGrids.push_back(nanovdb::tools::openToNanoVDB(grid));}
+
+  // Total grid
+  nanoGrids.push_back(nanovdb::tools::openToNanoVDB(fTotalGrid));
+
+  nanovdb::io::writeGrids(filename, nanoGrids);
+
+  G4cout << "[NanoVDB] Written " << nanoGrids.size() << " grids to " << filename  << G4endl;
 }
 
 void VDBOutput::Reset() {
