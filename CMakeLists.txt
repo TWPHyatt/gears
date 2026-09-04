@@ -27,9 +27,16 @@ if(APPLE) # https://gitlab.kitware.com/cmake/community/-/wikis/doc/cmake/RPATH-h
   set(CMAKE_INSTALL_RPATH "${Geant4_DIR}/../..")
 endif()  # set RPATH in executable on Mac (must be before add_executable(...))
 
-find_package(OpenVDB REQUIRED)
+find_package(OpenVDB REQUIRED COMPONENTS openvdb nanovdb)
 
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cc VDBOutput.cc)
-target_link_libraries(${PROJECT_NAME} ${Geant4_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} OpenVDB::openvdb)
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE NANOVDB_USE_OPENVDB)
+
+target_link_libraries(${PROJECT_NAME}
+        ${Geant4_LIBRARIES}
+        OpenVDB::openvdb
+        OpenVDB::nanovdb
+        )
+
 install(TARGETS ${PROJECT_NAME}) # enable cmake --install
