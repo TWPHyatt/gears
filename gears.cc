@@ -686,7 +686,8 @@ public:
       size_t pos = fname.find_last_of(".");
       if (pos != std::string::npos) {fname = fname.substr(0, pos);}
 
-      fVDB.Write(fname + ".vdb");
+      fVDB.WriteVDB(fname + ".vdb");
+      fVDB.WriteNVDB(fname + ".nvdb");
     }
     fVDB.Reset();
   } ///< Close output file
